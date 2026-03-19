@@ -68,7 +68,8 @@ export const UploadForm = () => {
       if (linkError) throw linkError;
       
       const encodedSecret = btoa(password);
-      setResult({ url: `${window.location.origin}/?view=${linkData.id}&key=${encodedSecret}` });
+      const baseUrl = window.location.origin + window.location.pathname;
+      setResult({ url: `${baseUrl}?view=${linkData.id}&key=${encodedSecret}` });
     } catch (err: any) {
       console.error(err);
       alert('Failed to generate secure link: ' + err.message);
