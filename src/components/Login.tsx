@@ -10,7 +10,7 @@ export const Login = () => {
     setLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: window.location.origin }
+      options: { redirectTo: window.location.origin + window.location.pathname }
     });
     if (error) {
       console.error(error);
