@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#020617] text-slate-100 antialiased;
+    font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-950;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-800 rounded-full border-2 border-slate-950 hover:bg-emerald-600/50 transition-colors;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-emerald-900/20 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2;
+  }
+  
+  .input-field {
+    @apply w-full bg-slate-900/50 border border-slate-800 rounded-2xl px-5 py-3.5 text-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 outline-none transition-all placeholder:text-slate-600 backdrop-blur-sm;
+  }
+
+  .glass-card {
+    @apply bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-[2.5rem] shadow-2xl;
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+}
