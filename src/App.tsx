@@ -101,11 +101,11 @@ function AppContent({ session }: { session: any }) {
             </div>
           </motion.div>
 
-          <div className="flex items-center gap-6">
-            <nav className="hidden lg:flex items-center gap-1 p-1.5 bg-slate-900/40 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl">
-              <NavButton active={view === 'upload'} onClick={() => { setActiveLinkId(null); setView('upload'); }} icon={<Lock size={16} />} label={t('upload')} />
-              <NavButton active={view === 'unlock' || view === 'viewer'} onClick={() => setView(mediaInfo ? 'viewer' : 'unlock')} icon={<FileText size={16} />} label={t('preview')} />
-              <NavButton active={view === 'admin'} onClick={() => setView('admin')} icon={<LayoutDashboard size={16} />} label={t('admin')} />
+          <div className="flex items-center gap-3 md:gap-6">
+            <nav className="flex items-center gap-1 p-1 bg-slate-900/40 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl scale-[0.85] md:scale-100 origin-right">
+              <NavButton active={view === 'upload'} onClick={() => { setActiveLinkId(null); setView('upload'); }} icon={<Lock size={14} />} label={t('upload')} />
+              <NavButton active={view === 'unlock' || view === 'viewer'} onClick={() => setView(mediaInfo ? 'viewer' : 'unlock')} icon={<FileText size={14} />} label={t('preview')} />
+              <NavButton active={view === 'admin'} onClick={() => setView('admin')} icon={<LayoutDashboard size={14} />} label={t('admin')} />
             </nav>
 
             <button 
@@ -206,7 +206,7 @@ const NavButton = ({ active, onClick, icon, label }: { active: boolean, onClick:
       ${active ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'}`}
   >
     {icon}
-    {label}
+    <span className="hidden sm:inline">{label}</span>
   </button>
 );
 

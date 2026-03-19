@@ -43,14 +43,24 @@ export const Viewer = ({ type, url, watermark }: ViewerProps) => {
           <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.6)]" />
           <span className="text-sm font-black text-white uppercase tracking-[0.2em]">{t('secureLiveView')}</span>
         </div>
-        <div className="flex gap-3">
-          <button className="p-3 bg-slate-900 border border-slate-800 rounded-2xl text-slate-400 hover:text-white hover:border-slate-700 transition-all active:scale-95">
-            <Share2 size={20} />
-          </button>
-          <button className="p-3 bg-slate-900 border border-slate-800 rounded-2xl text-slate-400 hover:text-white hover:border-slate-700 transition-all active:scale-95">
-            <Download size={20} />
-          </button>
+        <div className="flex items-center gap-3">
+          <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.6)]" />
+          <span className="text-sm font-black text-white uppercase tracking-[0.2em]">{t('secureLiveView')}</span>
         </div>
+        {type === 'url' && (
+          <div className="bg-slate-900/60 border border-white/5 px-4 py-2 rounded-xl flex items-center gap-3">
+            <Shield size={14} className="text-emerald-500" />
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Connection Check:</span>
+            <a 
+              href={url} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-[10px] font-black text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-widest underline decoration-emerald-500/30 underline-offset-4"
+            >
+              Access Direct Link
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Main Content Container */}
