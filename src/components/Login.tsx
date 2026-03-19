@@ -8,9 +8,13 @@ export const Login = () => {
 
   const handleOAuth = async (provider: 'google' | 'github') => {
     setLoading(true);
+    const redirectUrl = window.location.hostname === 'localhost' 
+      ? window.location.origin 
+      : 'https://byteforgereal.github.io/Secure-Media-Gateway/';
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: window.location.origin + window.location.pathname }
+      options: { redirectTo: redirectUrl }
     });
     if (error) {
       console.error(error);
