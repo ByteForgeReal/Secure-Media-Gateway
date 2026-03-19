@@ -19,6 +19,7 @@ function AppContent({ session }: { session: any }) {
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [mediaInfo, setMediaInfo] = useState<{ type: 'image' | 'video' | 'pdf' | 'url'; url: string } | null>(null);
+  const [activeWatermark, setActiveWatermark] = useState<string>('');
 
   const { lang, setLang, t } = useLanguage();
 
@@ -45,12 +46,28 @@ function AppContent({ session }: { session: any }) {
         .update({ views: data.views + 1 })
         .eq('id', activeLinkId);
 
+      // Audit Logging
+      try {
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const { ip } = await ipRes.json();
+        await supabase.from('audit_logs').insert([{
+          link_id: activeLinkId,
+          viewer_ip: ip,
+          viewer_user_agent: navigator.userAgent
+        }]);
+      } catch (e) {
+        console.warn('Audit logging failed (IP track blocked)');
+      }
+
       if (data.media_type === 'url') {
          setMediaInfo({ type: 'url', url: data.file_path });
       } else {
          const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(data.file_path);
          setMediaInfo({ type: data.media_type as any, url: publicUrl });
       }
+      
+      const defaultWatermark = `SECURE_GATEWAY | ${session?.user?.email || 'GUEST'} | ${new Date().toLocaleDateString()}`;
+      setActiveWatermark(data.custom_watermark || defaultWatermark);
       setView('viewer');
     } catch (err: any) {
       setUnlockError(err.message);
@@ -169,7 +186,7 @@ function AppContent({ session }: { session: any }) {
                 <Viewer 
                   type={mediaInfo.type as any} 
                   url={mediaInfo.url} 
-                  watermark={`USER_SESSION | IP PROTECTED | ${new Date().toLocaleDateString()}`}
+                  watermark={activeWatermark}
                 />
               )}
               {view === 'admin' && <AdminDashboard />}

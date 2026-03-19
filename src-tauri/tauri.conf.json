@@ -1,0 +1,43 @@
+{
+  "build": {
+    "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "npm run dev",
+    "devPath": "http://localhost:5173",
+    "distDir": "../dist"
+  },
+  "package": {
+    "productName": "Secure Gateway",
+    "version": "1.0.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": true
+    },
+    "bundle": {
+      "active": true,
+      "category": "Utility",
+      "copyright": "",
+      "externalBin": [],
+      "icon": [
+        "public/logo192.png",
+        "public/logo512.png"
+      ],
+      "identifier": "com.byteforge.securegateway",
+      "longDescription": "",
+      "shortDescription": "",
+      "targets": "all"
+    },
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 800,
+        "resizable": true,
+        "title": "Secure Gateway",
+        "width": 1200
+      }
+    ]
+  }
+}

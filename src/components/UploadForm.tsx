@@ -3,6 +3,7 @@ import { Shield, Upload, Eye, CheckCircle2, Copy, RefreshCw, Link as LinkIcon, F
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { scanMediaContent } from '../lib/ai';
 
 export const UploadForm = () => {
   const { t } = useLanguage();
@@ -13,7 +14,9 @@ export const UploadForm = () => {
   const [expiry, setExpiry] = useState(60); // minutes
   const [maxViews, setMaxViews] = useState(5);
   const [isUploading, setIsUploading] = useState(false);
-  const [result, setResult] = useState<{ url: string } | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [customWatermark, setCustomWatermark] = useState('');
+  const [result, setResult] = useState<{ url: string, aiSummary?: string } | null>(null);
 
   const handleUpload = async () => {
     if ((mode === 'file' && !file) || (mode === 'link' && !url) || !password) {
@@ -34,42 +37,56 @@ export const UploadForm = () => {
           .from('media')
           .upload(fileName, file);
 
-        if (uploadError) throw uploadError;
-        
-        filePath = fileName;
-        mediaType = file.type.startsWith('video/') ? 'video' : file.type.startsWith('image/') ? 'image' : 'pdf';
-        mediaName = file.name;
-      } else if (mode === 'link' && url) {
-        filePath = url;
-        mediaType = 'url';
-        mediaName = url;
-      }
-
-      // Attach Uploader Identity
-      const { data: { session } } = await supabase.auth.getSession();
-      const uploaderEmail = session?.user?.email || 'Unknown User';
-      const finalMediaName = `${mediaName} [by ${uploaderEmail}]`;
-
-      const expiryTime = new Date(Date.now() + expiry * 60000).toISOString();
-      const { data: linkData, error: linkError } = await supabase
-        .from('links')
-        .insert([{
-          file_path: filePath,
-          password,
-          expiry_time: expiryTime,
-          max_views: maxViews,
-          media_type: mediaType,
-          media_name: finalMediaName,
-          views: 0
-        }])
-        .select()
-        .single();
-
-      if (linkError) throw linkError;
+      if (uploadError) throw uploadError;
       
-      const encodedSecret = btoa(password);
-      const baseUrl = window.location.origin + window.location.pathname;
-      setResult({ url: `${baseUrl}?view=${linkData.id}&key=${encodedSecret}` });
+      filePath = fileName;
+      mediaType = file.type.startsWith('video/') ? 'video' : file.type.startsWith('image/') ? 'image' : 'pdf';
+      mediaName = file.name;
+    } else if (mode === 'link' && url) {
+      filePath = url;
+      mediaType = 'url';
+      mediaName = url;
+    }
+
+    // Phase 2: AI Content Scan
+    setIsScanning(true);
+    const aiResult = await scanMediaContent(mediaType as any, filePath);
+    setIsScanning(false);
+
+    if (!aiResult.safe) {
+      throw new Error('AI Content Shield detected unsafe material. Upload blocked.');
+    }
+
+    // Attach Uploader Identity
+    const { data: { session } } = await supabase.auth.getSession();
+    const uploaderEmail = session?.user?.email || 'Unknown User';
+    const finalMediaName = `${mediaName} [by ${uploaderEmail}]`;
+
+    const expiryTime = new Date(Date.now() + expiry * 60000).toISOString();
+    const { data: linkData, error: linkError } = await supabase
+      .from('links')
+      .insert([{
+        file_path: filePath,
+        password,
+        expiry_time: expiryTime,
+        max_views: maxViews,
+        media_type: mediaType,
+        media_name: finalMediaName,
+        custom_watermark: customWatermark,
+        ai_summary: aiResult.summary,
+        views: 0
+      }])
+      .select()
+      .single();
+
+    if (linkError) throw linkError;
+    
+    const encodedSecret = btoa(password);
+    const baseUrl = window.location.origin + window.location.pathname;
+    setResult({ 
+      url: `${baseUrl}?view=${linkData.id}&key=${encodedSecret}`,
+      aiSummary: aiResult.summary 
+    });
     } catch (err: any) {
       console.error(err);
       alert('Failed to generate secure link: ' + err.message);
@@ -104,6 +121,7 @@ export const UploadForm = () => {
           {!result ? (
             <motion.div 
               key="upload-fields"
+              initial={{ opacity: 1 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2 }}
               className="space-y-8 relative z-10"
@@ -179,6 +197,17 @@ export const UploadForm = () => {
                 </div>
               </div>
 
+              <div className="space-y-2.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Custom Digital Watermark</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. TOP SECRET - CONFIDENTIAL"
+                  className="input-field"
+                  value={customWatermark}
+                  onChange={(e) => setCustomWatermark(e.target.value)}
+                />
+              </div>
+
               <div className="space-y-4">
                 <div className="flex justify-between items-end px-1">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{t('expiry')}</label>
@@ -199,11 +228,16 @@ export const UploadForm = () => {
 
               <button 
                 onClick={handleUpload}
-                disabled={isUploading}
+                disabled={isUploading || isScanning}
                 className="btn-primary w-full py-4 relative group overflow-hidden"
               >
                 <div className="absolute inset-x-0 bottom-0 h-1 bg-emerald-400/30 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-                {isUploading ? (
+                {isScanning ? (
+                  <>
+                    <RefreshCw className="animate-spin" size={20} />
+                    <span>AI Content Shield Scanning...</span>
+                  </>
+                ) : isUploading ? (
                   <>
                     <RefreshCw className="animate-spin" size={20} />
                     <span>{t('encrypting')}</span>
@@ -229,6 +263,16 @@ export const UploadForm = () => {
                 <h3 className="text-3xl font-black text-white mb-2">{t('linkGenerated')}</h3>
                 <p className="text-slate-400 text-sm font-medium">{t('readyToShare')}</p>
               </div>
+
+              {result.aiSummary && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-left">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Shield size={14} className="text-emerald-400" />
+                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest text-emerald-500/50">AI Content Shield Result</span>
+                  </div>
+                  <p className="text-xs text-slate-300 italic leading-relaxed">"{result.aiSummary}"</p>
+                </div>
+              )}
               
               <div className="bg-slate-950/50 border border-white/5 rounded-3xl p-2 flex items-center gap-2 group">
                 <div className="flex-1 px-4 py-2 text-emerald-400 font-mono text-sm overflow-hidden text-ellipsis whitespace-nowrap">
